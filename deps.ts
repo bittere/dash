@@ -1,1 +1,1 @@
-export { parseArgs } from "jsr:@std/cli@1";
+export { parseArgs } from "jsr:@std/cli@1.0.4";
