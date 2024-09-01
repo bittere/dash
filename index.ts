@@ -73,4 +73,4 @@ function dash(opts?: DashOpts): DashWrapper {
 	};
 }
 
-export default dash;
+export { dash };
