@@ -4,6 +4,8 @@
 
 ## Usage
 
+See https://jsr.io/@bittere/dash.
+
 ### Register a Command
 
 ```ts
