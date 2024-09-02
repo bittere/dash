@@ -64,13 +64,13 @@ Starts a `while` loop that goes on prompting the user until one of the below is 
 
 - Ctrl+C or any other method to terminate the program
 - Ctrl+D to close input
-- The internal dash `exit` command is used to exit `break` out of the loop
+- The internal dash `exit` command is used to `break` out of the loop
 
 Example:
 
 ```ts
 const shell = dash();
-shell.start();
+await shell.start();
 ```
 
 ## Principles
