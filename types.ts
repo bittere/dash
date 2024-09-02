@@ -22,10 +22,12 @@ interface DashOpts {
 	prompt?: (state: DashState) => string;
 }
 
+type DashArgs = Args & { __: string[] };
+
 /** Describes the type of function accepted in the `register` API. */
 type DashCommand = (
 	/** The command line arguments passed. Includes an `__` property containing the entire command split by spaces. */
-	options: Args & { __: string[] },
+	options: DashArgs,
 	/** The current state passed around. */
 	state: DashState,
 	/** A function to log to the initialization parameter `stdout`. Mainly for testing purposes. */
@@ -52,6 +54,7 @@ interface DashStreamInterface {
 export type {
 	DashOpts,
 	DashState,
+	DashArgs,
 	DashCommand,
 	DashWrapper,
 	DashStreamInterface,

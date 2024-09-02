@@ -1,5 +1,6 @@
 import { parseArgs } from "./deps.ts";
 import type {
+	DashArgs,
 	DashCommand,
 	DashOpts,
 	DashState,
@@ -97,7 +98,7 @@ function dash(opts?: DashOpts): DashWrapper {
 					break;
 				}
 
-				const args = parseArgs(commandChunks);
+				const args: DashArgs = parseArgs(commandChunks);
 				args.__ = commandChunks;
 
 				if (commands.get(commandName)) {
