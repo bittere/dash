@@ -1,6 +1,7 @@
 <img src="https://github.com/user-attachments/assets/62bcf8a1-26f6-474c-8faa-690951fd64f6" alt="dash logo" style="width: 50%; max-width: 900px" />
 
 # dash
+[![JSR](https://jsr.io/badges/@bittere/dash)](https://jsr.io/@bittere/dash)
 
 > A shell framework in Deno.
 
