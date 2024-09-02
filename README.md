@@ -11,7 +11,7 @@ See https://jsr.io/@bittere/dash.
 ```ts
 dash().register(
   command: string,
-  fn: (options: Args, state: DashState) => DashState | void)
+  fn: (options: Args, state: DashState, log: DashStreamInterface["log"]) => (DashState | void)
 )
 ```
 
@@ -36,7 +36,7 @@ hello there
 ### Start the Shell
 
 ```ts
-dash().start();
+await dash().start();
 ```
 
 Starts a `while` loop that goes on prompting the user until one of the below is done:
@@ -56,6 +56,7 @@ shell.start();
 
 - The `state` object can be used to pass around state to the prompt function and other commands.
 - Commands should handle all their arguments (eg. `help`) on their own. Dash is a _shell_ framework, not a CLI framework!
+- The `log` function should be used if output is something other than stdout (eg. a `WritableStream` for tests). However, `console.log` may be used if the output is stdout.
 
 ## License
 
