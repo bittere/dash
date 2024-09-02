@@ -4,7 +4,28 @@
 
 ## Usage
 
+### Installation
+
 See https://jsr.io/@bittere/dash.
+
+### Initialization
+
+```ts
+dash({
+  initMessage?: string;
+  initState?: DashState;
+  stdin?: ReadableStream;
+  stdout?: WritableStream;
+  prompt?: (state: DashState) => string;
+})
+```
+
+All options are, well, optional.
+`initMessage` is a message displayed when the shell is started.
+`initState` is the default state to start with.
+`stdin` is the input stream.
+`stdout` is the output stream.
+`prompt` is a function that displays the prompt, given the state.
 
 ### Register a Command
 
