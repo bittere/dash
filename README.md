@@ -1,6 +1,7 @@
-<img src="https://github.com/user-attachments/assets/62bcf8a1-26f6-474c-8faa-690951fd64f6" alt="dash logo" style="width: 50%; max-width: 900px" />
+<img src="https://github.com/user-attachments/assets/62bcf8a1-26f6-474c-8faa-690951fd64f6" alt="dash logo" style="width: 80%; max-width: 900px;" />
 
 # dash
+
 [![JSR](https://jsr.io/badges/@bittere/dash)](https://jsr.io/@bittere/dash)
 
 > A shell framework in Deno.
@@ -14,9 +15,8 @@ See https://jsr.io/@bittere/dash.
 ### Initialization
 
 ```ts
-dash({
-  initMessage?: string;
-  initState?: DashState;
+dash<T>({
+  init: (log: DashStreamInterface["logs"]) => T;
   stdin?: ReadableStream;
   stdout?: WritableStream;
   prompt?: (state: DashState) => string;
@@ -24,18 +24,19 @@ dash({
 ```
 
 All options are, well, optional.
-`initMessage` is a message displayed when the shell is started.
-`initState` is the default state to start with.
+`init` is run before starting the shell. The object returned by `init` (of type `T`) is used as the default state. If `init` is not present, the default state is `{}`.
 `stdin` is the input stream.
 `stdout` is the output stream.
 `prompt` is a function that displays the prompt, given the state.
 
+`T` is the type of state used by the functions.
+
 ### Register a Command
 
 ```ts
-dash().register(
+dash<T>().register(
   command: string,
-  fn: (options: Args, state: DashState, log: DashStreamInterface["log"]) => (DashState | void)
+  fn: (options: Args, state: T, log: DashStreamInterface["log"]) => (T | void)
 )
 ```
 

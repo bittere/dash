@@ -64,7 +64,7 @@ describe("dash initialization", () => {
 		expect(decoder.decode(lines[1])).toEqual("sample prompt here: ");
 	});
 
-	it("sets the initMessage", async () => {
+	it("runs an init function", async () => {
 		const stdin = new ReadableStream({
 			start(controller) {
 				controller.enqueue(encoder.encode("exit\n"));
@@ -82,15 +82,16 @@ describe("dash initialization", () => {
 		const shell = dash({
 			stdin,
 			stdout,
-			initMessage: "Welcome to dash!",
+			init: (log) => {
+				log("test");
+			},
 		});
 		await shell.start();
 
-		expect(decoder.decode(lines[0])).toEqual("Welcome to dash!");
-		expect(decoder.decode(lines[2])).toEqual("> ");
+		expect(decoder.decode(lines[0])).toEqual("test");
 	});
 
-	it("sets the initState", async () => {
+	it("runs an init function and sets init state", async () => {
 		const stdin = new ReadableStream({
 			start(controller) {
 				controller.enqueue(encoder.encode("exit\n"));
@@ -108,11 +109,16 @@ describe("dash initialization", () => {
 		const shell = dash({
 			stdin,
 			stdout,
-			initState: { dir: "~" },
+			init: (log) => {
+				log("test");
+				return {
+					foo: "bar",
+				};
+			},
 		});
 		await shell.start();
 
-		expect(decoder.decode(lines[1])).toEqual("> ");
+		expect(decoder.decode(lines[0])).toEqual("test");
 	});
 });
 
@@ -168,6 +174,11 @@ describe("dash register", () => {
 		const shell = dash({
 			stdin,
 			stdout,
+			init: () => {
+				return {
+					foo: "bar",
+				};
+			},
 		});
 
 		shell.register("log", (_, state, log) => {
@@ -176,7 +187,7 @@ describe("dash register", () => {
 
 		await shell.start();
 
-		expect(decoder.decode(lines[2])).toBe('{"dir":"~"}');
+		expect(decoder.decode(lines[2])).toBe('{"foo":"bar"}');
 	});
 
 	it("registers a state-modifying command", async () => {
@@ -199,12 +210,17 @@ describe("dash register", () => {
 		const shell = dash({
 			stdin,
 			stdout,
+			init: () => {
+				return {
+					foo: "bar",
+				};
+			},
 		});
 
 		shell.register("modify", (_, state) => {
 			return {
 				...state,
-				foo: "bar",
+				foo: "baz",
 			};
 		});
 
@@ -215,6 +231,6 @@ describe("dash register", () => {
 		await shell.start();
 
 		expect(decoder.decode(lines[3])).toBe("> ");
-		expect(decoder.decode(lines[4])).toBe('{"dir":"~","foo":"bar"}');
+		expect(decoder.decode(lines[4])).toBe('{"foo":"baz"}');
 	});
 });

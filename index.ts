@@ -3,7 +3,6 @@ import type {
 	DashArgs,
 	DashCommand,
 	DashOpts,
-	DashState,
 	DashStreamInterface,
 	DashWrapper,
 } from "./types.ts";
@@ -48,18 +47,15 @@ function createInterface(
  * @param {DashOpts} [opts] The options to use.
  * @returns {DashWrapper} The `dash` wrapper. Check out the README for more information.
  */
-function dash(opts?: DashOpts): DashWrapper {
-	const commands = new Map<string, DashCommand>();
-	let state =
-		opts?.initState ||
-		({
-			dir: "~",
-		} as DashState);
+function dash<T>(opts?: DashOpts<T>): DashWrapper<T> {
+	const commands = new Map<string, DashCommand<T>>();
 
 	const rw = createInterface(
 		opts?.stdin ?? Deno.stdin.readable,
 		opts?.stdout ?? Deno.stdout.writable
 	);
+
+	let state: T = opts?.init?.(rw.log) ?? ({} as T);
 
 	return {
 		/**
@@ -67,7 +63,7 @@ function dash(opts?: DashOpts): DashWrapper {
 		 * @param {string} command The command name.
 		 * @param {DashCommand} fn The function to run when the command is called.
 		 */
-		register: (command: string, fn: DashCommand) => {
+		register: (command: string, fn: DashCommand<T>) => {
 			commands.set(command, fn);
 		},
 
@@ -77,10 +73,6 @@ function dash(opts?: DashOpts): DashWrapper {
 		 * @returns {Promise<void>}
 		 */
 		start: async (): Promise<void> => {
-			if (opts?.initMessage) {
-				rw.log(opts?.initMessage);
-			}
-
 			while (true) {
 				rw.log("\n");
 				const userCommand = await rw.question(
