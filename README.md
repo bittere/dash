@@ -103,5 +103,4 @@ await shell.start();
 
 ## License
 
-MIT with Commons Clause
-See `LICENSE` for more information.
+MIT with Commons Clause. See `LICENSE` for more information.
