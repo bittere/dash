@@ -1,5 +1,0 @@
-{
-	"name": "@bittere/dash",
-	"version": "0.2.2",
-	"exports": "./mod.ts"
-}
