@@ -1,1 +1,9 @@
-{ "type": "module", "dependencies": { "@cross/test": "npm:@jsr/cross__test", "@std/assert": "npm:@jsr/std__assert", "@std/cli": "npm:@jsr/std__cli", "@std/expect": "npm:@jsr/std__expect", "@std/testing": "npm:@jsr/std__testing" } }
+{
+	"type": "module",
+	"dependencies": {
+		"@cross/test": "npm:@jsr/cross__test",
+		"@std/assert": "npm:@jsr/std__assert",
+		"@std/cli": "npm:@jsr/std__cli",
+		"@std/expect": "npm:@jsr/std__expect"
+	}
+}
