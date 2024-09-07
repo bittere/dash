@@ -1,4 +1,7 @@
 {
+	"name": "@bittere/dash",
+	"version": "0.2.2",
+	"exports": "./mod.ts",
 	"imports": {
 		"@cross/test": "jsr:@cross/test@^0.0.9",
 		"@std/assert": "jsr:@std/assert@^1.0.4",
