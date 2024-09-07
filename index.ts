@@ -34,11 +34,10 @@ function dash<T>(opts?: DashOpts<T>): DashWrapper<T> {
 			let state: T = (await opts?.init?.(io)) ?? ({} as T);
 
 			while (true) {
-				io.log("\n");
+				await io.output.write("\n");
 
-				const userCommand = await io.question(
-					(await opts?.prompt?.(state)) ?? "> "
-				);
+				await io.output.write((await opts?.prompt?.(state)) ?? "> ");
+				const userCommand = await io.input.read();
 
 				if (!userCommand) {
 					continue;
@@ -63,7 +62,7 @@ function dash<T>(opts?: DashOpts<T>): DashWrapper<T> {
 						// biome-ignore lint/style/noNonNullAssertion: we're checking that the command exists in the above if block
 						(await commands.get(commandName)!(args, state, io)) || state;
 				} else {
-					io.log(`dash: command not found: ${commandName}`);
+					io.output.write(`dash: command not found: ${commandName}`);
 				}
 			}
 		},

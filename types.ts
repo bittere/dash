@@ -2,10 +2,17 @@ import type { Args } from "./deps.ts";
 
 /** The input/output for a dash shell. */
 interface DashIO {
-	/** A function that prompts the user and returns the input. */
-	question: (question: string) => Promise<string> | string;
-	/** A function that logs data. */
-	log: (data: string) => void;
+	/** The input object. May be a stream, but doesn't have to. Any object with a `read` method is allowed. */
+	input: {
+		/** Any function that returns a string is allowed. */
+		read: () => Promise<string> | string;
+	};
+
+	/** The output object. May be a stream, but doesn't have to. Any object with a `write` method is allowed. */
+	output: {
+		/** Any function that accepts a string is allowed. */
+		write: (chunk: string) => Promise<void> | void;
+	};
 }
 
 /** The initialization options for a dash shell. */

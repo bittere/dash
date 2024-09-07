@@ -2,9 +2,30 @@ import { describe, it } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 
 import { dash } from "./mod.ts";
+import type { DashIO } from "./types.ts";
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder("utf-8");
+function buildIO(queue: string[]): [DashIO, () => string[]] {
+	const op: string[] = [];
+
+	return [
+		{
+			input: {
+				read: () => `${queue.shift() ?? ""}\n`,
+			},
+
+			output: {
+				write: (chunk: string) => {
+					op.push(chunk);
+					return;
+				},
+			},
+		},
+
+		() => {
+			return op;
+		},
+	];
+}
 
 describe("dash startup", () => {
 	it("creates a shell", () => {
@@ -13,167 +34,79 @@ describe("dash startup", () => {
 	});
 
 	it("starts & exits the shell", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
+		const shell = dash();
 
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const [io, lines] = buildIO(["exit"]);
+		await shell.start(io);
 
-		const shell = dash({
-			stdin,
-			stdout,
-		});
-		await shell.start();
-
-		expect(decoder.decode(lines[0])).toEqual("\n");
-		expect(decoder.decode(lines[1])).toEqual("> ");
+		expect(lines()[0]).toEqual("\n");
+		expect(lines()[1]).toEqual("> ");
 	});
 });
 
 describe("dash initialization", () => {
 	it("sets the prompt", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
-
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const [io, lines] = buildIO(["exit"]);
 
 		const shell = dash({
-			stdin,
-			stdout,
 			prompt: () => "sample prompt here: ",
 		});
-		await shell.start();
+		await shell.start(io);
 
-		expect(decoder.decode(lines[1])).toEqual("sample prompt here: ");
+		expect(lines()[1]).toEqual("sample prompt here: ");
 	});
 
 	it("runs an init function", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
-
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const [io, lines] = buildIO(["exit"]);
 
 		const shell = dash({
-			stdin,
-			stdout,
-			init: (log) => {
-				log("test");
+			init: (io) => {
+				io.output.write("test");
 			},
 		});
-		await shell.start();
+		await shell.start(io);
 
-		expect(decoder.decode(lines[0])).toEqual("test");
+		expect(lines()[0]).toEqual("test");
 	});
 
 	it("runs an init function and sets init state", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
-
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const [io, lines] = buildIO(["exit"]);
 
 		const shell = dash({
-			stdin,
-			stdout,
-			init: (log) => {
-				log("test");
+			init: (io) => {
+				io.output.write("test");
 				return {
 					foo: "bar",
 				};
 			},
 		});
-		await shell.start();
+		await shell.start(io);
 
-		expect(decoder.decode(lines[0])).toEqual("test");
+		expect(lines()[0]).toEqual("test");
 	});
 });
 
 describe("dash register", () => {
 	it("registers an echo command", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("echo hello\n"));
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
+		const [io, lines] = buildIO(["echo hello", "exit"]);
 
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const shell = dash();
 
-		const shell = dash({
-			stdin,
-			stdout,
-		});
-
-		shell.register("echo", (options, _, log) => {
+		shell.register("echo", (options, _, io) => {
 			const toEcho = options.__.slice(1).join();
-			log(toEcho);
+			io.output.write(toEcho);
 		});
 
-		await shell.start();
+		await shell.start(io);
 
-		expect(decoder.decode(lines[1])).toEqual("> ");
-		expect(decoder.decode(lines[2])).toEqual("hello");
+		expect(lines()[1]).toEqual("> ");
+		expect(lines()[2]).toEqual("hello\n");
 	});
 
 	it("registers a state-logging command", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("log\n"));
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
-
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const [io, lines] = buildIO(["log", "exit"]);
 
 		const shell = dash({
-			stdin,
-			stdout,
 			init: () => {
 				return {
 					foo: "bar",
@@ -181,35 +114,19 @@ describe("dash register", () => {
 			},
 		});
 
-		shell.register("log", (_, state, log) => {
-			log(JSON.stringify(state));
+		shell.register("log", (_, state, io) => {
+			io.output.write(JSON.stringify(state));
 		});
 
-		await shell.start();
+		await shell.start(io);
 
-		expect(decoder.decode(lines[2])).toBe('{"foo":"bar"}');
+		expect(lines()[2]).toBe('{"foo":"bar"}');
 	});
 
 	it("registers a state-modifying command", async () => {
-		const stdin = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode("modify\n"));
-				controller.enqueue(encoder.encode("log\n"));
-				controller.enqueue(encoder.encode("exit\n"));
-				controller.close();
-			},
-		});
-
-		const lines: Uint8Array[] = [];
-		const stdout = new WritableStream({
-			write(chunk) {
-				lines.push(chunk);
-			},
-		});
+		const [io, lines] = buildIO(["modify", "log", "exit"]);
 
 		const shell = dash({
-			stdin,
-			stdout,
 			init: () => {
 				return {
 					foo: "bar",
@@ -224,13 +141,13 @@ describe("dash register", () => {
 			};
 		});
 
-		shell.register("log", (_, state, log) => {
-			log(JSON.stringify(state));
+		shell.register("log", (_, state, io) => {
+			io.output.write(JSON.stringify(state));
 		});
 
-		await shell.start();
+		await shell.start(io);
 
-		expect(decoder.decode(lines[3])).toBe("> ");
-		expect(decoder.decode(lines[4])).toBe('{"foo":"baz"}');
+		expect(lines()[3]).toBe("> ");
+		expect(lines()[4]).toBe('{"foo":"baz"}');
 	});
 });
