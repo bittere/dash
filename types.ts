@@ -11,7 +11,7 @@ interface DashIO {
 	/** The output object. May be a stream, but doesn't have to. Any object with a `write` method is allowed. */
 	output: {
 		/** Any function that accepts a string is allowed. */
-		write: (chunk: string) => Promise<void> | void;
+		write: (chunk: string) => Promise<unknown> | unknown;
 	};
 }
 
