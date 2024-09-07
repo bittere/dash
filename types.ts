@@ -1,15 +1,19 @@
-import type { Args } from "jsr:@std/cli@1/parse-args";
+import type { Args } from "./deps.ts";
+
+/** The input/output for a dash shell. */
+interface DashIO {
+	/** A function that prompts the user and returns the input. */
+	question: (question: string) => Promise<string> | string;
+	/** A function that logs data. */
+	log: (data: string) => void;
+}
 
 /** The initialization options for a dash shell. */
 interface DashOpts<T> {
-	/** A initialization function */
-	init?: (log: DashStreamInterface["log"]) => T;
-	/** The input stream. */
-	stdin?: ReadableStream;
-	/** The output stream. */
-	stdout?: WritableStream;
+	/** An initialization function */
+	init?: (streams: DashIO) => Promise<T> | T;
 	/** A function that displays the prompt, given the state. */
-	prompt?: (state: T) => string;
+	prompt?: (state: T) => Promise<string> | string;
 }
 
 type DashArgs = Args & { __: string[] };
@@ -20,31 +24,17 @@ type DashCommand<T> = (
 	options: DashArgs,
 	/** The current state passed around. */
 	state: T,
-	/** A function to log to the initialization parameter `stdout`. Mainly for testing purposes. */
-	log: DashStreamInterface["log"]
+	/** The input/output. */
+	streams: DashIO
 	// biome-ignore lint/suspicious/noConfusingVoidType: functions without return values are typically typed as void
-) => T | void;
+) => Promise<T> | T | void;
 
 /** The object returned after calling `dash()` */
 interface DashWrapper<T> {
-	/** The start function. Should be called after all commands have been registered. */
-	start: () => Promise<void>;
+	/** The start function. Should be called after all commands have been registered. Multiple start functions can be called on different input/output streams if needed. */
+	start: (io: DashIO) => Promise<void>;
 	/** Register a command. `fn` is called when the first word of the prompt matches the `command` argument. See {@link DashCommand} for more info on the `fn` argument. */
 	register: (command: string, fn: DashCommand<T>) => void;
 }
 
-/** An internal interface used for input/output. */
-interface DashStreamInterface {
-	/** Logs a line to stdout, waits for response from stdin and returns it. */
-	question: (line: string) => Promise<string>;
-	/** Simply logs a line to stdout. */
-	log: (line: string) => void;
-}
-
-export type {
-	DashOpts,
-	DashArgs,
-	DashCommand,
-	DashWrapper,
-	DashStreamInterface,
-};
+export type { DashIO, DashOpts, DashArgs, DashCommand, DashWrapper };

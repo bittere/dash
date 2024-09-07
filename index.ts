@@ -2,45 +2,10 @@ import { parseArgs } from "./deps.ts";
 import type {
 	DashArgs,
 	DashCommand,
+	DashIO,
 	DashOpts,
-	DashStreamInterface,
 	DashWrapper,
 } from "./types.ts";
-
-/**
- * Creates a `DashStreamInterface` from a given readable and writable stream.
- *
- * A `DashStreamInterface` is an object with a `question` method and a `log` method.
- * The `question` method takes a string, encodes it with a TextEncoder, writes it to the given writable stream, waits for a string to be written to the given readable stream, decodes it with a TextDecoder, and returns the decoded string.
- * The `log` method takes a string, encodes it with the given encoder, and writes it to the given writable stream.
- *
- * @param {ReadableStream} input The readable stream to read from.
- * @param {WritableStream} output The writable stream to write to.
- *
- * @returns {DashStreamInterface} The `DashStreamInterface` object.
- */
-function createInterface(
-	input: ReadableStream,
-	output: WritableStream
-): DashStreamInterface {
-	const reader = input.getReader();
-	const writer = output.getWriter();
-
-	const encoder = new TextEncoder();
-	const decoder = new TextDecoder("utf-8");
-
-	return {
-		question: async (line: string) => {
-			// a writable stream to avoid the newline when using console.log
-			writer.write(encoder.encode(line));
-			const op = await reader.read();
-			return decoder.decode(op.value).trim();
-		},
-		log: (line: string) => {
-			writer.write(encoder.encode(line));
-		},
-	};
-}
 
 /**
  * Creates a `dash` wrapper.
@@ -49,13 +14,6 @@ function createInterface(
  */
 function dash<T>(opts?: DashOpts<T>): DashWrapper<T> {
 	const commands = new Map<string, DashCommand<T>>();
-
-	const rw = createInterface(
-		opts?.stdin ?? Deno.stdin.readable,
-		opts?.stdout ?? Deno.stdout.writable
-	);
-
-	let state: T = opts?.init?.(rw.log) ?? ({} as T);
 
 	return {
 		/**
@@ -72,11 +30,14 @@ function dash<T>(opts?: DashOpts<T>): DashWrapper<T> {
 		 * This function will not return until the user ends the input/program (eg. with Ctrl+D, Ctrl+C or with the built-in `exit` command.)
 		 * @returns {Promise<void>}
 		 */
-		start: async (): Promise<void> => {
+		start: async (io: DashIO): Promise<void> => {
+			let state: T = (await opts?.init?.(io)) ?? ({} as T);
+
 			while (true) {
-				rw.log("\n");
-				const userCommand = await rw.question(
-					opts?.prompt?.(state) ?? "> "
+				io.log("\n");
+
+				const userCommand = await io.question(
+					(await opts?.prompt?.(state)) ?? "> "
 				);
 
 				if (!userCommand) {
@@ -98,10 +59,11 @@ function dash<T>(opts?: DashOpts<T>): DashWrapper<T> {
 					// when testing, it is useful to send the data to the `stdout` initialzation option instead of `stdout` of the process
 					// console.log still totally works though tests may fail
 
-					// biome-ignore lint/style/noNonNullAssertion: we're checking that the command exists in the above if block
-					state = commands.get(commandName)!(args, state, rw.log) || state;
+					state =
+						// biome-ignore lint/style/noNonNullAssertion: we're checking that the command exists in the above if block
+						(await commands.get(commandName)!(args, state, io)) || state;
 				} else {
-					rw.log(`dash: command not found: ${commandName}`);
+					io.log(`dash: command not found: ${commandName}`);
 				}
 			}
 		},
